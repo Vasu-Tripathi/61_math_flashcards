@@ -35,14 +35,28 @@ class GameEngine:
         self.generate_new_card()
 
     def generate_new_card(self):
-        self.num_a = random.randint(3, 15)
-        self.num_b = random.randint(2, 12)
-        self.operator = random.choice(["+", "-", "*"])
-        if self.operator == "-" and self.num_a < self.num_b:
-            self.num_a, self.num_b = self.num_b, self.num_a
+        self.operator = random.choice(["+", "-", "*", "/"])
+
+        if self.operator == "/":
+            division_pairs = [
+                (a, b)
+                for a in range(3, 16)
+                for b in range(2, 13)
+                if a % b == 0 and a // b >= 2
+            ]
+
+            self.num_a, self.num_b = random.choice(division_pairs)
+
+        else:
+            self.num_a = random.randint(3, 15)
+            self.num_b = random.randint(2, 12)
+
+            if self.operator == "-" and self.num_a < self.num_b:
+                self.num_a, self.num_b = self.num_b, self.num_a
 
         self.input_box.clear()
-        self.input_box.clear()
+
+        # Task 2: reset timer for new question
         self.question_start_ticks = pygame.time.get_ticks()
 
     def compute_expected_answer(self):
@@ -52,6 +66,8 @@ class GameEngine:
             return self.num_a - self.num_b
         elif self.operator == "*":
             return self.num_a * self.num_b
+        elif self.operator == "/":
+            return self.num_a // self.num_b
 
 
     def get_remaining_time(self):
