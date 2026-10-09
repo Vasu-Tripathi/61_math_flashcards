@@ -10,6 +10,8 @@ class GameEngine:
 
         self.score = 0
         self.total_attempts = 0
+        self.streak = 0
+        self.max_streak_multiplier = 5
         self.feedback_msg = "Solve the card and press Enter!"
         self.feedback_color = (200, 205, 215)
 
@@ -65,22 +67,24 @@ class GameEngine:
 
         expected = self.compute_expected_answer()
 
-        # A timeout counts as a missed attempt, but earns no points.
         self.total_attempts += 1
-        self.feedback_msg = f"TIME'S UP! Expected {expected}."
+        self.streak = 0
+
+        self.feedback_msg = (
+            f"TIME'S UP! Expected {expected}. Streak reset."
+        )
         self.feedback_color = (240, 75, 75)
 
-        # Generate a new card and restart its timer.
         self.generate_new_card()
 
         return True
 
     def submit_answer(self):
-
         if self.handle_timeout():
             return
 
         val_str = self.input_box.text.strip()
+
         if not val_str or val_str == "-":
             self.feedback_msg = "Type an answer first!"
             self.feedback_color = (240, 175, 40)
@@ -88,16 +92,35 @@ class GameEngine:
 
         user_answer = int(val_str)
         expected = self.compute_expected_answer()
+
         self.total_attempts += 1
 
         if user_answer == expected:
-            self.score += 1
-            self.feedback_msg = f"CORRECT! {self.num_a} {self.operator} {self.num_b} = {expected}"
+            self.streak += 1
+
+            multiplier = min(
+                self.streak,
+                self.max_streak_multiplier
+            )
+
+            self.score += multiplier
+
+            self.feedback_msg = (
+                f"CORRECT! {self.num_a} {self.operator} {self.num_b} "
+                f"= {expected} | +{multiplier} pts ({multiplier}x)"
+            )
             self.feedback_color = (80, 230, 110)
+
             self.generate_new_card()
+
         else:
-            self.feedback_msg = f"WRONG! Expected {expected}."
+            self.streak = 0
+
+            self.feedback_msg = (
+                f"WRONG! Expected {expected}. Streak reset."
+            )
             self.feedback_color = (240, 75, 75)
+
             self.input_box.clear()
 
     def handle_event(self, event):
@@ -126,7 +149,8 @@ class GameEngine:
         )
 
         score_surf = self.font_hud.render(
-            f"Score: {self.score} / {self.total_attempts}",
+            f"Score: {self.score} | Attempts: {self.total_attempts} "
+            f"| Streak: {self.streak}",
             True,
             (255, 220, 80)
         )
